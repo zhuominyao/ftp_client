@@ -80,20 +80,34 @@ void handle_message(int sockfd)
 void ftp_request_loop(int sockfd)
 {
 	char request[MAXLINE];
-	char cwd[512] = "/home/yaozhuomin/";
+	char parameter[MAXLINE];
 	while(true)
 	{
-		cin>>request;
+		scanf("%s",request);
 		if(!is_valid_command(request))
 		{
 			cout<<"please input the valid command"<<endl;
-			cout<<"commands support now include :ls"<<endl;
+			cout<<"commands support now include :ls,cd"<<endl;
 			continue;
 		}
-		write(sockfd,request,strlen(request));
 		if(strcmp(request,"ls") == 0)
 		{
+			cout<<"in if"<<endl;
+			write(sockfd,request,strlen(request));
 			do_ls(sockfd);
+		}
+		else if(strcmp(request,"cd") == 0)
+		{	
+			write(sockfd,request,strlen(request));
+			char confirm[5];
+			int n;
+
+			n = read(sockfd,confirm,5);
+			confirm[n] = '\0';
+			cout<<confirm<<endl;
+			scanf("%s",parameter);
+			write(sockfd,parameter,strlen(parameter));
+			do_cd(sockfd);
 		}
 	}
 }
@@ -102,16 +116,22 @@ bool is_valid_command(char * cmd)
 {
 	if(strcmp(cmd,"ls") == 0)
 		return true;
-	else
-		return false;
+	if(strcmp(cmd,"cd") == 0)
+		return true;
+	return false;
 }
 
 void do_ls(int sockfd)
 {
 	char buffer[MAXLINE];
 	int n = -1;
-	while((n = read(sockfd,buffer,MAXLINE)) != 0)
-	{
-		cout<<buffer<<endl;	
-	}
+	FILE * fr = fdopen(sockfd,"r");
+	while( fgets(buffer,MAXLINE,fr) != NULL && strcmp(buffer,"endoffile\n") != 0)
+		cout<<buffer;	
+	cout<<"跳出while循环"<<endl;
+}
+
+void do_cd(int sockfd)
+{
+	
 }
