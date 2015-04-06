@@ -92,7 +92,7 @@ void ftp_request_loop(int sockfd)
 		}
 		if(strcmp(request,"ls") == 0)
 		{
-			cout<<"in if"<<endl;
+			//cout<<"in if"<<endl;
 			write(sockfd,request,strlen(request));
 			do_ls(sockfd);
 		}
@@ -101,13 +101,17 @@ void ftp_request_loop(int sockfd)
 			write(sockfd,request,strlen(request));
 			char confirm[5];
 			int n;
-
 			n = read(sockfd,confirm,5);
 			confirm[n] = '\0';
 			cout<<confirm<<endl;
 			scanf("%s",parameter);
 			write(sockfd,parameter,strlen(parameter));
 			do_cd(sockfd);
+		}
+		else if(strcmp(request,"pwd") == 0)
+		{
+			write(sockfd,request,strlen(request));
+			do_pwd(sockfd);
 		}
 	}
 }
@@ -118,7 +122,17 @@ bool is_valid_command(char * cmd)
 		return true;
 	if(strcmp(cmd,"cd") == 0)
 		return true;
+	if(strcmp(cmd,"pwd") == 0)
+		return true;
 	return false;
+}
+
+void do_pwd(int sockfd)
+{
+	FILE * fr = fdopen(sockfd,"r");
+	char wd[MAXLINE];
+	fscanf(fr,"%s",wd);
+	cout<<"the work directory now is:"<<wd<<endl;
 }
 
 void do_ls(int sockfd)
@@ -128,10 +142,18 @@ void do_ls(int sockfd)
 	FILE * fr = fdopen(sockfd,"r");
 	while( fgets(buffer,MAXLINE,fr) != NULL && strcmp(buffer,"endoffile\n") != 0)
 		cout<<buffer;	
-	cout<<"跳出while循环"<<endl;
 }
 
 void do_cd(int sockfd)
 {
-	
+	FILE * fr = fdopen(sockfd,"r");
+	int result;
+	cout<<"before fscanf"<<endl;
+	fscanf(fr,"%d",&result);
+	if(result == 1)
+		cout<<"change directory successfully"<<endl;
+	else if(result == 2)
+		cout<<"fail to change directory : the directory you request is not a path"<<endl;
+	else if(result == 3)
+		cout<<"fail to change directory : the directory you request is not exist"<<endl;
 }
