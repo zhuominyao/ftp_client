@@ -3,6 +3,8 @@
 
 using namespace std;
 
+char default_work_directory[MAXLINE] = "/";
+
 int main(int argc,char * argv[])
 {
 	int sockfd;
@@ -87,7 +89,7 @@ void ftp_request_loop(int sockfd)
 		if(!is_valid_command(request))
 		{
 			cout<<"please input the valid command"<<endl;
-			cout<<"commands support now include :ls,cd"<<endl;
+			cout<<"commands support now include :ls,cd,pwd,get"<<endl;
 			continue;
 		}
 		if(strcmp(request,"ls") == 0)
@@ -98,13 +100,13 @@ void ftp_request_loop(int sockfd)
 		}
 		else if(strcmp(request,"cd") == 0)
 		{	
+			scanf("%s",parameter);
 			write(sockfd,request,strlen(request));
 			char confirm[5];
 			int n;
 			n = read(sockfd,confirm,5);
 			confirm[n] = '\0';
-			cout<<confirm<<endl;
-			scanf("%s",parameter);
+			cout<<confirm<<endl;	
 			write(sockfd,parameter,strlen(parameter));
 			do_cd(sockfd);
 		}
@@ -112,6 +114,17 @@ void ftp_request_loop(int sockfd)
 		{
 			write(sockfd,request,strlen(request));
 			do_pwd(sockfd);
+		}
+		else if(strcmp(request,"get") == 0)
+		{	
+			scanf("%s",parameter);
+			write(sockfd,request,strlen(request));
+			char confirm[5];
+			int n;
+			n = read(sockfd,confirm,5);
+			confirm[n] = '\0';
+			write(sockfd,parameter,strlen(parameter));
+			do_get(sockfd,parameter);
 		}
 	}
 }
@@ -124,7 +137,42 @@ bool is_valid_command(char * cmd)
 		return true;
 	if(strcmp(cmd,"pwd") == 0)
 		return true;
+	if(strcmp(cmd,"get") == 0)
+		return true;
 	return false;
+}
+
+void do_get(int sockfd,char * parameter)
+{
+	FILE * fr = fdopen(sockfd,"r");
+	int result;
+	
+	fscanf(fr,"%d",&result);
+	if(result == 1)
+		cout<<"the file you request is a directory"<<endl;
+	else if(result == 2)
+	{
+		cout<<"the file you request exist"<<endl;
+		char * filename;
+		int i;
+		char absolute_path[MAXLINE];
+		for(i = strlen(parameter);i >= 0;i--)
+		{
+			if(parameter[i] == '/')
+				break;
+		}
+		if(i == -1)
+			filename = parameter;
+		else
+			filename = parameter + i + 1;
+		cout<<filename<<endl;
+		strcpy(absolute_path,default_work_directory);
+		strcat(absolute_path,filename);
+		cout<<absolute_path<<endl;
+		//FILE * fw = fopen()
+	}
+	else if(result == 3)
+		cout<<"the file you request is not exist"<<endl;
 }
 
 void do_pwd(int sockfd)
