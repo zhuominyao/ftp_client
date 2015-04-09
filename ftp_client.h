@@ -7,6 +7,7 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
 
 void handle_message(int);
 void ftp_request_loop(int);
