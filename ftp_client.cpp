@@ -75,6 +75,7 @@ void handle_message(int sockfd)
 	{
 		close(sockfd);
 		cout<<"the connection is closeed because the client connecting to server is overload"<<endl;
+		exit(-1);
 	}
 }
 
@@ -126,7 +127,61 @@ void ftp_request_loop(int sockfd)
 			do_get(sockfd,parameter);
 			cout<<endl;
 		}
+		else if(strcmp(request,"put") == 0)
+		{
+			scanf("%s",parameter);//读取要上传的文件名
+			if(parameter[0] != '/')//保证输入的文件名为绝对路径
+			{
+				cout<<"please input a absolute path"<<endl;
+				cout<<endl;
+				continue;
+			}
+			int result = is_file_exist(parameter);//判断文件是否存在
+			if(result == 2)//根据文件是否存在来执行相应的操作
+			{
+				write(sockfd,request,strlen(request));
+				char confirm[5];
+				int n,i;
+				n = read(sockfd,confirm,5);
+				for(i = strlen(parameter);i >= 0;i--)
+				{
+					if(parameter[i] == '/')
+						break;
+				}
+				write(sockfd,parameter+i+1,strlen(parameter+i+1));//在收到confirm之后,发送要上传的文件名
+				do_put(sockfd,parameter);
+			}
+			else if(result == 3)
+				cout<<"the file you request is not exist"<<endl;
+			else if(result == 1)
+				cout<<"the file you request is a directory"<<endl;
+			cout<<endl;
+		}
+		else if(strcmp(request,"bye") == 0)
+		{
+			close(sockfd);
+			cout<<"close ftp connection"<<endl;
+			cout<<endl;
+			exit(-1);
+		}
 	}
+}
+
+int is_file_exist(char * filename)//保证filename是绝对路径
+{
+	struct stat s;
+	int stat_result;
+	stat_result = lstat(filename,&s);
+
+	if(stat_result == 0)
+	{
+		if(S_ISDIR(s.st_mode))
+			return 1;//请求的路径存在且为文件夹
+		else
+			return 2;//请求的路径存在且为文件
+	}
+	else
+		return 3;//请求的路径不存在
 }
 
 bool is_valid_command(char * cmd)
@@ -139,7 +194,29 @@ bool is_valid_command(char * cmd)
 		return true;
 	if(strcmp(cmd,"get") == 0)
 		return true;
+	if(strcmp(cmd,"put") == 0)
+		return true;
+	if(strcmp(cmd,"bye") == 0)
+		return true;
 	return false;
+}
+
+void do_put(int sockfd,char * parameter)
+{
+	FILE * fr = fopen(parameter,"rb") ;//保证parameter是绝对路径
+	if(fr == NULL)
+	{
+		cout<<"fail to oepn file"<<endl;
+		return;
+	}
+	while(!feof(fr))
+	{
+		char temp[MAXLINE];
+		int n = fread(temp,1,MAXLINE,fr);
+		cout<<"n:"<<n<<endl;
+		write(sockfd,temp,n);
+	}
+	cout<<"success to transport file"<<endl;
 }
 
 void do_get(int sockfd,char * parameter)
