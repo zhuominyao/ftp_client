@@ -18,6 +18,7 @@ void do_cd(int);
 void do_pwd(int);
 void do_get(int,char *);
 void do_put(int,char *);
+void do_delete(int);
 int is_file_exist(char *);
 
 

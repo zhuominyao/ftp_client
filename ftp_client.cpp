@@ -89,7 +89,7 @@ void ftp_request_loop(int sockfd)
 		if(!is_valid_command(request))
 		{
 			cout<<"please input the valid command"<<endl;
-			cout<<"commands support now include :ls,cd,pwd,get"<<endl;
+			cout<<"commands support now include :ls,cd,pwd,get,put,delete"<<endl;
 			cout<<endl;
 			continue;
 		}
@@ -164,6 +164,17 @@ void ftp_request_loop(int sockfd)
 			cout<<endl;
 			exit(-1);
 		}
+		else if(strcmp(request,"delete") == 0)
+		{
+			scanf("%s",parameter);//读取请求删除的文件
+			write(sockfd,request,strlen(request));
+			char confirm[5];
+			int n;
+			n = read(sockfd,confirm,5);
+			write(sockfd,parameter,strlen(parameter));//在收到confirm之后,发送请求删除的文件名
+			do_delete(sockfd);
+			cout<<endl;
+		}
 	}
 }
 
@@ -198,7 +209,27 @@ bool is_valid_command(char * cmd)
 		return true;
 	if(strcmp(cmd,"bye") == 0)
 		return true;
+	if(strcmp(cmd,"delete") == 0)
+		return true;
 	return false;
+}
+
+void do_delete(int sockfd)
+{
+	FILE * fr = fdopen(sockfd,"rb");
+	int result;
+	
+	fscanf(fr,"%d",&result);
+	/*if(result == 1)
+		cout<<"the file you request is a directory"<<endl;
+	else if(result == 2)
+		cout<<"the file you request exist"<<endl;
+	else if(result == 3)
+		cout<<"the file you request is not exist"<<endl;*/
+	if(result == 0)
+		cout<<"delete successfully"<<endl;
+	else
+		cout<<"fail to delete"<<endl;
 }
 
 void do_put(int sockfd,char * parameter)
